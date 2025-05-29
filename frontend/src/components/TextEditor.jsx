@@ -4,6 +4,8 @@ import Quill from "quill";
 import { io } from "socket.io-client";
 import "quill/dist/quill.snow.css";
 
+const serverUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
 const TextEditor = () => {
   const { id: docId } = useParams();
   const [socket, setSocket] = useState(null);
@@ -11,7 +13,7 @@ const TextEditor = () => {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const s = io("http://localhost:3001");
+    const s = io(serverUrl);
     setSocket(s);
 
     const $editor = document.createElement("div");
