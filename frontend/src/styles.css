@@ -1,0 +1,30 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  background-color: #f3f3f3;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#root,
+#wrapper,
+#wrapper .ql-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#wrapper .ql-editor {
+  flex-grow: 1;
+}

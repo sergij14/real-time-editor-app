@@ -18,7 +18,7 @@ const TextEditor = () => {
     };
   }, []);
 
-  return <div ref={containerRef}></div>;
+  return <div id="wrapper" ref={containerRef}></div>;
 };
 
 export default TextEditor;
