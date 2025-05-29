@@ -4,7 +4,8 @@ import Quill from "quill";
 import { io } from "socket.io-client";
 import "quill/dist/quill.snow.css";
 
-const serverUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+const SAVE_INTERVAL = 2000;
 
 const TextEditor = () => {
   const { id: docId } = useParams();
@@ -13,7 +14,7 @@ const TextEditor = () => {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const s = io(serverUrl);
+    const s = io(SERVER_URL);
     setSocket(s);
 
     const $editor = document.createElement("div");
@@ -43,12 +44,17 @@ const TextEditor = () => {
       quill.updateContents(delta);
     };
 
+    const interval = setInterval(() => {
+      socket.emit("save-doc", quill.getContents());
+    }, SAVE_INTERVAL);
+
     quill.on("text-change", handleTextChange);
     socket.on("receive-text-change", handleReceiveTextChange);
 
     return () => {
       quill.off("text-change", handleTextChange);
       socket.off("receive-text-change", handleReceiveTextChange);
+      clearInterval(interval);
     };
   }, [quill, socket]);
 
