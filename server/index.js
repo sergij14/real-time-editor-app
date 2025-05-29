@@ -6,5 +6,7 @@ const io = require("socket.io")(3001, {
 });
 
 io.on("connection", (socket) => {
-  console.log(socket.id);
+  socket.on("text-change", (delta) => {
+    socket.broadcast.emit("receive-text-change", delta);
+  });
 });
