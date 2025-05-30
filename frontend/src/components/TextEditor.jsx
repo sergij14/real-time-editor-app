@@ -28,7 +28,9 @@ const TextEditor = () => {
 
     return () => {
       s?.disconnect();
-      containerRef.current.innerHTML = "";
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
     };
   }, []);
 
