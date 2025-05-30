@@ -4,6 +4,7 @@ import Quill from "quill";
 import { io } from "socket.io-client";
 import "quill/dist/quill.snow.css";
 import QuillCursors from "quill-cursors";
+import JoinForm from "./JoinForm";
 
 Quill.register("modules/cursors", QuillCursors);
 
@@ -116,32 +117,20 @@ const TextEditor = () => {
     socket.emit("get-doc", docId);
   }, [quill, socket, docId]);
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    return username.trim() && setIsReady(true);
+  };
+
   if (!isReady) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4">
-        <input
-          className="border px-4 py-2 text-lg rounded"
-          placeholder="Enter your name"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <button
-          className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
-          onClick={() => username.trim() && setIsReady(true)}
-        >
-          Join Document
-        </button>
-      </div>
-    );
+    return <JoinForm {...{ username, setUsername, handleFormSubmit }} />;
   }
 
   return (
     <div className="app-container">
       <div className="editor-wrapper" ref={containerRef}></div>
       <div className="active-users">
-        <div className="active-users-title">
-          <h3>active users</h3>
-        </div>
+        <div className="active-users-title">active users</div>
         <div className="active-users-content">
           {users.map(({ username, color, id }) => (
             <p key={id} style={{ color }}>
