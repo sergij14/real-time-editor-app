@@ -19,7 +19,7 @@ body {
     Arial, sans-serif;
 }
 
-.app-container {
+.editor-container {
   display: flex;
   flex: 1;
   flex-direction: column;
