@@ -11,22 +11,40 @@ const io = require("socket.io")(3001, {
 mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/db", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
+});
 
 io.on("connection", (socket) => {
+  const username = socket.handshake.query.username || "Anonymous";
+
   socket.on("get-doc", async (docId) => {
     const doc = await handleDoc(docId);
 
     socket.join(docId);
+    socket.docId = docId;
+
     socket.emit("load-doc", doc.data);
+  });
 
-    socket.on("text-change", (delta) => {
-      socket.broadcast.to(docId).emit("receive-text-change", delta);
-    });
+  socket.on("text-change", (delta) => {
+    socket.broadcast.to(socket.docId).emit("receive-text-change", delta);
+  });
 
-    socket.on("save-doc", async (data) => {
-      await Doc.findByIdAndUpdate(docId, { data });
+  socket.on("cursor-change", ({ range, username }) => {
+    socket.broadcast.to(socket.docId).emit("receive-cursor-change", {
+      userId: socket.id,
+      range,
+      username,
     });
+  });
+
+  socket.on("save-doc", async (data) => {
+    await Doc.findByIdAndUpdate(socket.docId, { data });
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.docId) {
+      socket.broadcast.to(socket.docId).emit("remove-cursor", socket.id);
+    }
   });
 });
 
