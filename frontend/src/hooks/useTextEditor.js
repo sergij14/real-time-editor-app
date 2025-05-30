@@ -8,6 +8,7 @@ Quill.register("modules/cursors", QuillCursors);
 
 const SERVER_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 const SAVE_INTERVAL = 2000;
+const TYPING_DELAY = 1000;
 
 const useTextEditor = () => {
   const { id: docId } = useParams();
@@ -15,9 +16,11 @@ const useTextEditor = () => {
   const [isReady, setIsReady] = useState(false);
   const [socket, setSocket] = useState(null);
   const [quill, setQuill] = useState(null);
+  const [typingUserId, setTypingUserId] = useState(null);
   const [users, setUsers] = useState([]);
   const containerRef = useRef(null);
   const cursorsRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!isReady) return;
@@ -57,7 +60,18 @@ const useTextEditor = () => {
 
     const handleTextChange = (delta, oldDelta, source) => {
       if (source !== "user") return;
+
       socket.emit("text-change", delta);
+      socket.emit("user-typing", true);
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("user-typing", false);
+      }, TYPING_DELAY);
+    };
+
+    const handleReceiveUserTyping = (userId, state) => {
+      setTypingUserId(state ? userId : null);
     };
 
     const handleSelectionChange = (range, oldRange, source) => {
@@ -90,6 +104,7 @@ const useTextEditor = () => {
     quill.on("text-change", handleTextChange);
     socket.on("receive-text-change", handleReceiveTextChange);
     socket.on("receive-cursor-change", handleReceiveCursorChange);
+    socket.on("receive-user-typing", handleReceiveUserTyping);
     socket.on("remove-cursor", handleRemoveCursor);
     socket.on("users", handleUsers);
 
@@ -98,9 +113,11 @@ const useTextEditor = () => {
       quill.off("selection-change", handleSelectionChange);
       socket.off("receive-text-change", handleReceiveTextChange);
       socket.off("receive-cursor-change", handleReceiveCursorChange);
+      socket.off("receive-user-typing", handleReceiveUserTyping);
       socket.off("remove-cursor", handleRemoveCursor);
       socket.off("users", handleUsers);
       clearInterval(interval);
+      clearTimeout(typingTimeoutRef.current);
     };
   }, [quill, socket]);
 
@@ -127,6 +144,7 @@ const useTextEditor = () => {
     username,
     setUsername,
     handleFormSubmit,
+    typingUserId,
   };
 };
 

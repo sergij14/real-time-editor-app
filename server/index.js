@@ -47,6 +47,10 @@ io.on("connection", (socket) => {
     socket.broadcast.to(socket.docId).emit("receive-text-change", delta);
   });
 
+  socket.on("user-typing", (state) => {
+    socket.broadcast.to(socket.docId).emit("receive-user-typing", socket.id, state);
+  });
+
   socket.on("cursor-change", ({ range, username }) => {
     socket.broadcast.to(socket.docId).emit("receive-cursor-change", {
       userId: socket.id,

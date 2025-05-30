@@ -2,6 +2,7 @@ import React from "react";
 import JoinForm from "./JoinForm";
 import useTextEditor from "../hooks/useTextEditor";
 import "quill/dist/quill.snow.css";
+import TypingDots from "./UI/TypingDots";
 
 const TextEditor = () => {
   const {
@@ -11,6 +12,7 @@ const TextEditor = () => {
     username,
     setUsername,
     handleFormSubmit,
+    typingUserId,
   } = useTextEditor();
 
   if (!isReady) {
@@ -22,13 +24,17 @@ const TextEditor = () => {
       <div className="editor-wrapper" ref={containerRef}></div>
       <div className="active-users">
         <div className="active-users-title">active users</div>
-        <div className="active-users-content">
+        <ul className="active-users-content">
           {users.map(({ username, color, id }) => (
-            <p key={id} style={{ color }}>
-              {username}
-            </p>
+            <li
+              key={id}
+              style={{ color }}
+              className="active-users-content-item"
+            >
+              {username} {id === typingUserId ? <TypingDots /> : null}
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );
