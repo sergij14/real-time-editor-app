@@ -14,26 +14,31 @@ mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/db", {
 });
 
 // in-memory active users
-let users = [];
+let users = {};
 
 io.on("connection", (socket) => {
   const username = socket.handshake.query.username || "Anonymous";
   const color = `hsl(${Math.random() * 360}, 100%, 70%)`;
-
-  users.push({
-    id: socket.id,
-    username,
-    color,
-  });
 
   socket.on("get-doc", async (docId) => {
     const doc = await handleDoc(docId);
 
     socket.join(docId);
     socket.docId = docId;
+    const newUser = {
+      id: socket.id,
+      username,
+      color,
+    };
+
+    if (Array.isArray(users[docId])) {
+      users[docId].push(newUser);
+    } else {
+      users[docId] = [newUser];
+    }
 
     socket.emit("load-doc", doc.data);
-    io.to(docId).emit("users", users);
+    io.to(docId).emit("users", users[docId]);
   });
 
   socket.on("text-change", (delta) => {
@@ -58,8 +63,10 @@ io.on("connection", (socket) => {
       socket.broadcast.to(socket.docId).emit("remove-cursor", socket.id);
     }
 
-    users = users.filter((user) => user.id !== socket.id);
-    io.to(socket.docId).emit("users", users);
+    users[socket.docId] = users[socket.docId].filter(
+      (user) => user.id !== socket.id
+    );
+    io.to(socket.docId).emit("users", users[socket.docId]);
   });
 });
 
