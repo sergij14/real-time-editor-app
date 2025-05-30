@@ -16,22 +16,15 @@ const TextEditor = () => {
   const [isReady, setIsReady] = useState(false);
   const [socket, setSocket] = useState(null);
   const [quill, setQuill] = useState(null);
+  const [users, setUsers] = useState([]);
   const containerRef = useRef(null);
   const cursorsRef = useRef(null);
-  const userColorsRef = useRef({});
-
-  const getUserColor = (userId) => {
-    if (!userColorsRef.current[userId]) {
-      userColorsRef.current[userId] = `hsl(${Math.random() * 360}, 100%, 70%)`;
-    }
-    return userColorsRef.current[userId];
-  };
 
   useEffect(() => {
     if (!isReady) return;
 
     const s = io(SERVER_URL, {
-      query: { username }, 
+      query: { username },
     });
     setSocket(s);
 
@@ -73,8 +66,7 @@ const TextEditor = () => {
       socket.emit("cursor-change", { range, username });
     };
 
-    const handleReceiveCursorChange = ({ userId, range, username }) => {
-      const color = getUserColor(userId);
+    const handleReceiveCursorChange = ({ userId, range, username, color }) => {
       cursorsRef.current.createCursor(userId, username, color);
       cursorsRef.current.moveCursor(userId, range);
     };
@@ -91,11 +83,16 @@ const TextEditor = () => {
       socket.emit("save-doc", quill.getContents());
     }, SAVE_INTERVAL);
 
+    const handleUsers = (users) => {
+      setUsers(users);
+    };
+
     quill.on("selection-change", handleSelectionChange);
     quill.on("text-change", handleTextChange);
     socket.on("receive-text-change", handleReceiveTextChange);
     socket.on("receive-cursor-change", handleReceiveCursorChange);
     socket.on("remove-cursor", handleRemoveCursor);
+    socket.on("users", handleUsers);
 
     return () => {
       quill.off("text-change", handleTextChange);
@@ -103,6 +100,7 @@ const TextEditor = () => {
       socket.off("receive-text-change", handleReceiveTextChange);
       socket.off("receive-cursor-change", handleReceiveCursorChange);
       socket.off("remove-cursor", handleRemoveCursor);
+      socket.off("users", handleUsers);
       clearInterval(interval);
     };
   }, [quill, socket]);
@@ -137,7 +135,19 @@ const TextEditor = () => {
     );
   }
 
-  return <div id="wrapper" ref={containerRef}></div>;
+  return (
+    <div className="app-container">
+      <div className="editor-wrapper" ref={containerRef}></div>
+      <div className="active-users">
+        <h3>Active Users:</h3>
+        {users.map(({ username, color, id }) => (
+          <p key={id} style={{ color }}>
+            {username}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default TextEditor;

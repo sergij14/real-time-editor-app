@@ -13,8 +13,18 @@ mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/db", {
   useUnifiedTopology: true,
 });
 
+// in-memory active users
+let users = [];
+
 io.on("connection", (socket) => {
   const username = socket.handshake.query.username || "Anonymous";
+  const color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+
+  users.push({
+    id: socket.id,
+    username,
+    color,
+  });
 
   socket.on("get-doc", async (docId) => {
     const doc = await handleDoc(docId);
@@ -23,6 +33,7 @@ io.on("connection", (socket) => {
     socket.docId = docId;
 
     socket.emit("load-doc", doc.data);
+    io.to(docId).emit("users", users);
   });
 
   socket.on("text-change", (delta) => {
@@ -34,6 +45,7 @@ io.on("connection", (socket) => {
       userId: socket.id,
       range,
       username,
+      color,
     });
   });
 
@@ -45,6 +57,9 @@ io.on("connection", (socket) => {
     if (socket.docId) {
       socket.broadcast.to(socket.docId).emit("remove-cursor", socket.id);
     }
+
+    users = users.filter((user) => user.id !== socket.id);
+    io.to(socket.docId).emit("users", users);
   });
 });
 
