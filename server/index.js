@@ -18,13 +18,14 @@ let users = {};
 
 io.on("connection", (socket) => {
   const username = socket.handshake.query.username || "Anonymous";
+  const randomColor = socketIdToHexColor(socket.id);
 
   socket.on("get-doc", async (docId) => {
     const doc = await handleDoc(docId);
 
     socket.join(docId);
     socket.docId = docId;
-    socket.color = socketIdToHexColor(socket.id);
+    socket.color = randomColor;
 
     const newUser = {
       id: socket.id,

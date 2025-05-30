@@ -139,12 +139,16 @@ const TextEditor = () => {
     <div className="app-container">
       <div className="editor-wrapper" ref={containerRef}></div>
       <div className="active-users">
-        <h3>Active Users:</h3>
-        {users.map(({ username, color, id }) => (
-          <p key={id} style={{ color }}>
-            {username}
-          </p>
-        ))}
+        <div className="active-users-title">
+          <h3>active users</h3>
+        </div>
+        <div className="active-users-content">
+          {users.map(({ username, color, id }) => (
+            <p key={id} style={{ color }}>
+              {username}
+            </p>
+          ))}
+        </div>
       </div>
     </div>
   );
