@@ -21,7 +21,6 @@ const TextEditor = () => {
 
   return (
     <div className="editor-container">
-      <div className="editor-wrapper" ref={containerRef}></div>
       <div className="active-users">
         <div className="active-users-title">active users</div>
         <ul className="active-users-content">
@@ -36,6 +35,7 @@ const TextEditor = () => {
           ))}
         </ul>
       </div>
+      <div className="editor-wrapper" ref={containerRef}></div>
     </div>
   );
 };
