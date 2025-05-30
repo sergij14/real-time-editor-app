@@ -41,7 +41,7 @@ const TextEditor = () => {
     });
 
     q.disable();
-    q.setText("Loading...");
+    q.setText("");
     setQuill(q);
     cursorsRef.current = q.getModule("cursors");
 

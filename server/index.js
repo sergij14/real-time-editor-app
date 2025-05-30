@@ -18,17 +18,18 @@ let users = {};
 
 io.on("connection", (socket) => {
   const username = socket.handshake.query.username || "Anonymous";
-  const color = `hsl(${Math.random() * 360}, 100%, 70%)`;
 
   socket.on("get-doc", async (docId) => {
     const doc = await handleDoc(docId);
 
     socket.join(docId);
     socket.docId = docId;
+    socket.color = socketIdToHexColor(socket.id);
+
     const newUser = {
       id: socket.id,
       username,
-      color,
+      color: socket.color,
     };
 
     if (Array.isArray(users[docId])) {
@@ -50,7 +51,7 @@ io.on("connection", (socket) => {
       userId: socket.id,
       range,
       username,
-      color,
+      color: socket.color,
     });
   });
 
@@ -84,4 +85,18 @@ async function handleDoc(id) {
   } catch (err) {
     console.log(err);
   }
+}
+
+function socketIdToHexColor(socketId) {
+  let hash = 0;
+  for (let i = 0; i < socketId.length; i++) {
+    hash = socketId.charCodeAt(i) + ((hash << 5) - hash);
+    hash |= 0; // Convert to 32-bit integer
+  }
+
+  const r = (hash >> 16) & 0xff;
+  const g = (hash >> 8) & 0xff;
+  const b = hash & 0xff;
+
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }
