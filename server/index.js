@@ -1,5 +1,6 @@
 const { createClient } = require("redis");
 const socketIdToHexColor = require("./utils/socketIdToHexColor");
+const redisAPI = require("./utils/redisAPI");
 
 const io = require("socket.io")(3001, {
   cors: {
@@ -8,15 +9,17 @@ const io = require("socket.io")(3001, {
   },
 });
 
-let users = {};
 let redisClient;
-
 (async () => {
   redisClient = createClient({
     url: process.env.REDIS_URL || "redis://redis:6379",
   });
 
   redisClient.on("error", (error) => console.error(`Error : ${error}`));
+
+  const { addUser, getUsers, getOrAddDoc, removeUser } = new redisAPI(
+    redisClient
+  );
 
   await redisClient.connect().then(() => {
     console.log("Redis connected...");
@@ -26,7 +29,7 @@ let redisClient;
       const color = socketIdToHexColor(socket.id);
 
       socket.on("get-doc", async (docId) => {
-        const docData = await handleDoc(docId);
+        const doc = await getOrAddDoc(docId);
 
         socket.join(docId);
         socket.docId = docId;
@@ -36,16 +39,11 @@ let redisClient;
           username,
           color,
         };
+        await addUser(docId, newUser);
+        const userList = await getUsers(docId);
+        io.to(docId).emit("users", userList);
 
-        if (Array.isArray(users[docId])) {
-          users[docId].push(newUser);
-        } else {
-          users[docId] = [newUser];
-        }
-
-        io.to(docId).emit("users", users[docId]);
-
-        socket.emit("load-doc", docData);
+        socket.emit("load-doc", doc);
 
         socket.on("text-change", (delta) => {
           socket.broadcast.to(docId).emit("receive-text-change", delta);
@@ -67,36 +65,20 @@ let redisClient;
         });
 
         socket.on("save-doc", async (data) => {
+          console.log(data);
+
           await redisClient.set(docId, JSON.stringify(data));
         });
       });
 
-      socket.on("disconnect", () => {
+      socket.on("disconnect", async () => {
         if (socket.docId) {
           socket.broadcast.to(socket.docId).emit("remove-cursor", socket.id);
+          await removeUser(socket.docId, socket.id);
+          const userList = await getUsers(socket.docId);
+          io.to(socket.docId).emit("users", userList);
         }
-
-        users[socket.docId] =
-          users[socket.docId]?.filter((user) => user.id !== socket.id) || [];
-
-        io.to(socket.docId).emit("users", users[socket.docId]);
       });
     });
   });
 })();
-
-async function handleDoc(id) {
-  if (!id) return "";
-
-  try {
-    const data = await redisClient.get(id);
-
-    if (data) return JSON.parse(data);
-
-    await redisClient.set(id, "");
-    return "";
-  } catch (err) {
-    console.error("Redis Error:", err);
-    return "";
-  }
-}
