@@ -17,7 +17,7 @@ let redisClient;
 
   redisClient.on("error", (error) => console.error(`Error : ${error}`));
 
-  const { addUser, getUsers, getOrAddDoc, removeUser } = new redisAPI(
+  const { addUser, getUsers, initDoc, setDoc, removeUser } = new redisAPI(
     redisClient
   );
 
@@ -29,7 +29,7 @@ let redisClient;
       const color = socketIdToHexColor(socket.id);
 
       socket.on("get-doc", async (docId) => {
-        const doc = await getOrAddDoc(docId);
+        const doc = await initDoc(docId);
 
         socket.join(docId);
         socket.docId = docId;
@@ -65,9 +65,7 @@ let redisClient;
         });
 
         socket.on("save-doc", async (data) => {
-          console.log(data);
-
-          await redisClient.set(docId, JSON.stringify(data));
+          await setDoc(docId, JSON.stringify(data));
         });
       });
 

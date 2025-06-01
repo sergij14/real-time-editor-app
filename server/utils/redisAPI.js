@@ -3,11 +3,20 @@ module.exports = class {
     this.client = client;
   }
 
-  getOrAddDoc = async (id) => {
-    const data = await this.client.get(id);
+  initDoc = async (id) => {
+    const data = await this.getDoc(id);
     if (data) return JSON.parse(data);
-    await this.client.set(id, "");
+    await this.setDoc(id, "");
     return "";
+  };
+
+  setDoc = async (id, value = "") => {
+    await this.client.set(id, value);
+  };
+
+  getDoc = async (id) => {
+    const doc = await this.client.get(id);
+    return doc;
   };
 
   getUsers = async (docId) => {
